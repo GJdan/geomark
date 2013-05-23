@@ -73,14 +73,14 @@ class geomark {
    */
   public static function fileTypes() {
     return array(
-      'json' => array('info'),
-      'xml' => array('info'),
-      'kml' => array('read', 'write'),
-      'shpz' => array('read', 'write'),
-      'shp' => array('read', 'write'),
-      'geojson' => array('read', 'write'),
-      'gml' => array('read', 'write'),
-      'wkt' => array('read', 'write'),
+      'json' => array('mime' => 'application/json', 'info'),
+      'xml' => array('mime' => 'text/xml', 'info'),
+      'kml' => array('mime' => 'application/vnd.google-earth.kml+xml', 'read', 'write'),
+      'shpz' => array('mime' => 'application/x-shp+zip', 'read', 'write'),
+      'shp' => array('mime' => 'application/x-shp', 'read', 'write'),
+      'geojson' => array('mime' => 'application/x-geo+json', 'read', 'write'),
+      'gml' => array('mime' => 'application/gml+xml', 'read', 'write'),
+      'wkt' => array('mime' => 'text/plain', 'read', 'write'),
     );
   }
 

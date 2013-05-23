@@ -33,7 +33,7 @@ class geomark_writer {
       case 'create':
         $this->params = array(
           'format' => $format,
-          'multiple' => TRUE,
+          'multiple' => 'true',
           'body' => $data,
           'srid' => $srid,
         );
@@ -67,6 +67,11 @@ class geomark_writer {
    */
   public function create() {
     $action = '';
+    $boundary = "---------------------------".substr(md5(rand(0,32000)),0,10);
+    //$boundary = substr(md5(rand(0,32000)),0,10);
+    $post_string = "--" . $boundary;
+    $fileTypesInfo = geomark::fileTypes();
+
     if ($this->action == 'create') {
       $action = 'new';
     } elseif ($this->action == 'copy') {
@@ -75,13 +80,28 @@ class geomark_writer {
 
     foreach ($this->params as $key => &$value) {
       if (is_array($value)) {
-        $value = implode($key . '=', $value);
+        //$value = implode($key . '=', $value);
       }
 
-      $post_params[] = $key . '=' . urlencode($value);
-      //$post_params[] = $key . '=' . $value;
+      $post_string .= "
+Content-Disposition: form-data; name=\"" . $key . "\"";
+
+      if ($key == 'body') {
+	$post_string .= "
+Content-Type: " . $fileTypesInfo[$this->params['format']]['mime'];
+      } else {
+	//$post_string .= "
+	//Content-Type: text/plain";
+	}
+      $post_string .= "
+
+" . $value . "
+--" . $boundary;
+
+      //$post_params[] = $key . '=' . urlencode($value);
     }
-    $post_string = implode('&', $post_params);
+    $post_string .= "--\r\n\r\n";
+    //$post_string = implode('&', $post_params);
 
     $parts = parse_url($this->base_url . $action);
 
@@ -89,13 +109,13 @@ class geomark_writer {
           isset($parts['port'])?$parts['port']:80,
           $errno, $errstr, 30);
 
-    $out = "POST ".$parts['path']." HTTP/1.1\r\n";
-    $out.= "Host: ".$parts['host']."\r\n";
-    $out.= "Content-Type: application/x-www-form-urlencoded\r\n";
-    $out.= "Content-Length: ".strlen($post_string)."\r\n";
-    $out.= "Connection: Close\r\n\r\n";
+    $out = "POST " . $parts['path'] . " HTTP/1.1\r\n";
+    $out .= "Host: " . $parts['host'] . "\r\n";
+    $out .= "Content-Length: " . strlen($post_string) . "\r\n";
+    $out .= "Content-Type: multipart/form-data; boundary=" . $boundary . "\r\n";
+    $out .= "Connection: close\r\n\r\n";
     if (isset($post_string)) {
-      $out.= $post_string;
+      $out .= $post_string;
     }
 
     fwrite($fp, $out);
@@ -105,7 +125,8 @@ class geomark_writer {
       $response .= fgets($fp, 8192);
     }
     fclose($fp);
-
+    print_r($out);
+    print_r($response);
     return $this->evaluateResponse($response);
   }
 
