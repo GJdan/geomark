@@ -9,14 +9,36 @@ include_once('geomark.read.inc');
 class geomark_writer {
   private $base_url = 'http://apps.gov.bc.ca/pub/geomark/geomarks/';
   private $params;
+  private $action;
 
-  public function __construct($format, $data, $srid = 4326) {
-    $this->params = array(
-      'format' => $format,
-      'multiple' => TRUE,
-      'body' => $data,
-      'srid' => $srid,
-    );
+  public function __construct($action, $data, $format = '', $srid = 4326) {
+    $this->action = $action;
+
+    switch ($action) {
+      case 'copy':
+        if (!is_array($data)) {
+          $data = array($data);
+        }
+
+        foreach ($data as &$geomark) {
+          if (strpos($geomark, 'gm-') === FALSE) {
+            $geomark = 'gm-' . $geomark;
+          }
+        }
+
+        $this->params = array(
+          'geomarkUrl' => $data,
+        );
+        break;
+      case 'create':
+        $this->params = array(
+          'format' => $format,
+          'multiple' => TRUE,
+          'body' => $data,
+          'srid' => $srid,
+        );
+        break;
+    }
   }
 
   public function setGeometryType($geometry_type) {
@@ -44,17 +66,24 @@ class geomark_writer {
    * @return a geomark_reader object on success, or the http status code on failure.
    */
   public function create() {
+    $action = '';
+    if ($this->action == 'create') {
+      $action = 'new';
+    } elseif ($this->action == 'copy') {
+      $action = 'copy';
+    }
+
     foreach ($this->params as $key => &$value) {
       if (is_array($value)) {
-        $value = implode(',', $value);
+        $value = implode($key . '=', $value);
       }
 
-      $post_params[] = $key.'='.urlencode($value);
+      $post_params[] = $key . '=' . urlencode($value);
       //$post_params[] = $key . '=' . $value;
     }
     $post_string = implode('&', $post_params);
 
-    $parts = parse_url($this->base_url . 'new');
+    $parts = parse_url($this->base_url . $action);
 
     $fp = fsockopen($parts['host'],
           isset($parts['port'])?$parts['port']:80,
