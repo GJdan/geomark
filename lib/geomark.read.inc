@@ -1,9 +1,10 @@
 <?php
 /**
- * @file geomark.inc
+ * @file geomark.read.inc
  *
- * Entry point for php geomark api
+ * Code related to reading and retrieving information about existing Geomarks
  */
+include_once('geomark.write.inc');
 
 class geomark_reader {
   var $id;
@@ -11,7 +12,9 @@ class geomark_reader {
   private $base_url = 'http://apps.gov.bc.ca/pub/geomark/geomarks/gm-';
 
   public function __construct($id) {
-    // @todo Check with regex and strip out id if a full url is passed.
+    if (strpos($id, $this->base_url) !== FALSE) {
+      $id = str_replace($this->base_url, '', $id);
+    }
     $this->id = $id;
   }
 
@@ -51,6 +54,24 @@ class geomark_reader {
    */
   public function getPart() {
     return fgets($this->handler);
+  }
+
+  public function getAllArray() {
+    $geodata = array();
+    while ($data = $this->getPart()) {
+      $geodata[] = $data;
+    }
+
+    return $geodata;
+  }
+
+  public function getAllString() {
+    $geodata = '';
+    while ($data = $this->getPart()) {
+      $geodata .= $data;
+    }
+
+    return $geodata;
   }
 
   public function close() {

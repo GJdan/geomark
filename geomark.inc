@@ -5,11 +5,11 @@
  * Entry point for php geomark api
  */
 include_once('lib/geomark.read.inc');
+include_once('lib/geomark.write.inc');
 
 class geomark {
   public static function loadReader($id) {
     $geomark_reader = new geomark_reader($id);
-
     return $geomark_reader;
   }
 
@@ -17,36 +17,21 @@ class geomark {
     $gm = new geomark_reader($id);
     $gm->open('boundingBox', $file_type, $srid);
 
-    $geodata = '';
-    while ($data = $gm->getPart()) {
-      $geodata .= $data;
-    }
-
-    return $geodata;
+    return $gm->getString();
   }
 
   public static function getFeature($id, $file_type = 'wkt', $srid = 4326) {
     $gm = new geomark_reader($id);
     $gm->open('feature', $file_type, $srid);
 
-    $geodata = '';
-    while ($data = $gm->getPart()) {
-      $geodata .= $data;
-    }
-
-    return $geodata;
+    return $gm->getAllString();
   }
 
   public static function getInfo($id, $file_type = 'json') {
     $gm = new geomark_reader($id);
     $gm->open('info', $file_type);
 
-    $geodata = '';
-    while ($data = $gm->getPart()) {
-      $geodata .= $data;
-    }
-
-    return $geodata;
+    return $gm->getAllString();
   }
 
   /**
@@ -61,23 +46,18 @@ class geomark {
 
     switch ($output) {
       case 'array':
-        $geodata = array();
-        while ($data = $gm->getPart()) {
-          $geodata[] = $data;
-        }
+        $geodata = $gm->getAllArray();
         break;
       case 'text':
-        $geodata = '';
-        while ($data = $gm->getPart()) {
-          $geodata .= $data;
-        }
+        $geodata = $gm->getAllString();
         break;
     }
 
     if (!in_array($output, array('text', 'array'))) {
       // Could throw an error here.
-      return;
+      return FALSE;
     }
+
     return $geodata;
   }
 
@@ -85,12 +65,7 @@ class geomark {
     $gm = new geomark_reader($id);
     $gm->open('point', $file_type, $srid);
 
-    $geodata = '';
-    while ($data = $gm->getPart()) {
-      $geodata .= $data;
-    }
-
-    return $geodata;
+    return $gm->getAllString();
   }
 
   /**
